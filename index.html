@@ -9,9 +9,26 @@
     h1 { color: #1a3c6d; margin-bottom: 24px; }
     .field { margin: 16px 0; }
     label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; }
-    input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: monospace; font-size: 15px; box-sizing: border-box; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
     textarea { min-height: 140px; resize: vertical; }
-    button { padding: 10px 20px; margin: 8px 8px 8px 0; background: #1a3c6d; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    button {
+      padding: 10px 20px;
+      margin: 8px 8px 8px 0;
+      background: #1a3c6d;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
     button:hover { background: #254e8c; }
     button.danger { background: #dc3545; }
     button.danger:hover { background: #c82333; }
@@ -19,14 +36,33 @@
     th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
     th { background: #e3ebf5; font-weight: bold; }
     .station-list { margin: 24px 0; }
-    .station-item { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 16px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .station-item {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
     .station-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .station-actions button { margin-left: 8px; }
-    pre#generated { background: #1e1e1e; color: #e0e0e0; padding: 16px; border-radius: 6px; overflow: auto; font-size: 14px; white-space: pre-wrap; word-break: break-all; margin-top: 24px; }
+    pre#generated {
+      background: #1e1e1e;
+      color: #e0e0e0;
+      padding: 16px;
+      border-radius: 6px;
+      overflow: auto;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-top: 24px;
+    }
     #download-btn { background: #28a745; }
     #download-btn:hover { background: #218838; }
     #load-btn { background: #17a2b8; }
     #load-btn:hover { background: #138496; }
+    .search-select { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .search-select > * { flex: 1 1 300px; }
   </style>
 </head>
 <body>
@@ -35,19 +71,47 @@
 
 <button id="load-btn" onclick="loadBaza()">Wczytaj bieżącą bazę z GitHub</button>
 
+<!-- Wybór stacji do edycji -->
+<div class="field search-select">
+  <div>
+    <label>Wyszukaj stację (inteligentna podpowiedź):</label>
+    <input list="stations-list" id="station-search" placeholder="Wpisz 2+ litery...">
+    <datalist id="stations-list"></datalist>
+  </div>
+  
+  <div>
+    <label>Lub wybierz z listy rozwijanej:</label>
+    <select id="station-select">
+      <option value="">— wybierz stację —</option>
+    </select>
+  </div>
+  
+  <button onclick="loadSelectedStation()">Edytuj wybraną stację</button>
+</div>
+
+<!-- Dodawanie nowej stacji -->
 <div id="add-section" class="field">
   <label>Nazwa nowej stacji:</label>
   <input type="text" id="add-name" placeholder="np. Nowa Sceneria">
+  
   <table id="add-table">
-    <thead><tr><th>od km</th><th>do km</th><th>Przyczyna</th><th>Nr toru</th><th>Vmax nieparzystym</th><th>Vmax parzystym</th><th>Uwagi</th><th>Akcje</th></tr></thead>
+    <thead>
+      <tr>
+        <th>od km</th><th>do km</th><th>Przyczyna</th><th>Nr toru</th>
+        <th>Vmax nieparzystym</th><th>Vmax parzystym</th><th>Uwagi</th><th>Akcje</th>
+      </tr>
+    </thead>
     <tbody></tbody>
   </table>
+  
   <button onclick="addRow('add-table')">Dodaj wiersz</button>
   <button onclick="saveNewStation()">Zapisz nową stację</button>
 </div>
 
+<!-- Lista edycji -->
 <div id="station-list" class="station-list"></div>
 
+<!-- Generowanie -->
 <button onclick="generateCode()">Generuj kod baza.js</button>
 <button id="download-btn" onclick="downloadCode()">Pobierz plik baza.js</button>
 
@@ -56,6 +120,7 @@
 <script>
 let baza = {};
 
+// Wczytywanie bazy – wersja pancerna
 async function loadBaza() {
   try {
     const proxyUrl = 'https://api.allorigins.win/raw?url=' + 
@@ -65,41 +130,102 @@ async function loadBaza() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     
     let text = await res.text();
-    text = text.trim().replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'); // normalizacja
+    text = text.trim().replace(/^\uFEFF/, '');
     
-    console.log('=== Początek pliku (500 znaków) ===');
-    console.log(text.substring(0, 500));
-    console.log('Długość:', text.length);
+    console.log('=== Początek pliku (500 znaków) ===\n' + text.substring(0, 500));
     
-    // Super-elastyczny parser: znajduje cały obiekt od { do ostatniego }; w pliku
-    const startIndex = text.indexOf('{');
-    if (startIndex === -1) throw new Error('Nie znaleziono początku obiektu {');
+    // Bardzo elastyczny parser – znajduje wszystko pomiędzy pierwszym { a ostatnim };
+    const start = text.indexOf('{');
+    if (start === -1) throw new Error('Brak początku obiektu');
     
-    let braceCount = 1;
-    let endIndex = startIndex + 1;
-    while (endIndex < text.length && braceCount > 0) {
-      if (text[endIndex] === '{') braceCount++;
-      if (text[endIndex] === '}') braceCount--;
-      endIndex++;
+    let count = 1;
+    let end = start + 1;
+    while (end < text.length && count > 0) {
+      if (text[end] === '{') count++;
+      if (text[end] === '}') count--;
+      end++;
     }
     
-    if (braceCount !== 0) throw new Error('Niezbalansowane nawiasy klamrowe');
+    if (count !== 0) throw new Error('Niezbalansowane klamry');
     
-    const objectStr = text.substring(startIndex, endIndex);
-    console.log('Wyodrębniony obiekt ma', objectStr.length, 'znaków');
-    
-    const parser = new Function('return ' + objectStr);
+    const jsonStr = text.substring(start, end);
+    const parser = new Function('return ' + jsonStr);
     baza = parser();
     
+    populateSelects();
     renderStations();
-    alert(`Baza wczytana! Liczba stacji: ${Object.keys(baza).length}`);
+    alert(`Wczytano ${Object.keys(baza).length} stacji!`);
   } catch (err) {
-    console.error('Błąd:', err);
-    alert('Błąd: ' + err.message + '\n\nSprawdź konsolę – jeśli widzisz początek pliku z "Arkadia Zdrój", napisz mi to tutaj.');
+    console.error(err);
+    alert('Błąd wczytywania: ' + err.message + '\n\nSprawdź konsolę (F12)');
   }
 }
 
-// Pozostałe funkcje (bez zmian)
+// Wypełnia select i datalist
+function populateSelects() {
+  const select = document.getElementById('station-select');
+  const datalist = document.getElementById('stations-list');
+  
+  select.innerHTML = '<option value="">— wybierz stację —</option>';
+  datalist.innerHTML = '';
+  
+  Object.keys(baza).sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt.cloneNode(true));
+    datalist.appendChild(opt);
+  });
+}
+
+// Ładuje wybraną stację do edycji
+function loadSelectedStation() {
+  const name = document.getElementById('station-search').value.trim() || 
+               document.getElementById('station-select').value.trim();
+  
+  if (!name || !baza[name]) return alert('Wybierz istniejącą stację');
+  
+  // Tworzymy sekcję edycji jeśli jej nie ma
+  let section = document.getElementById(`edit-${name.replace(/\s+/g, '-')}`);
+  if (!section) {
+    section = document.createElement('div');
+    section.id = `edit-${name.replace(/\s+/g, '-')}`;
+    section.className = 'station-item';
+    section.innerHTML = `
+      <div class="station-header">
+        <h2>Edycja: ${name}</h2>
+        <div class="station-actions">
+          <button onclick="saveEdit('${name.replace(/'/g, "\\'")}')">Zapisz zmiany</button>
+          <button class="danger" onclick="deleteStation('${name.replace(/'/g, "\\'")}')">Usuń stację</button>
+        </div>
+      </div>
+      <table id="edit-table-${name.replace(/\s+/g, '-')}" data-name="${name}">
+        <thead><tr><th>od km</th><th>do km</th><th>Przyczyna</th><th>Nr toru</th><th>Vmax nieparzystym</th><th>Vmax parzystym</th><th>Uwagi</th><th>Akcje</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button onclick="addRow('edit-table-${name.replace(/\s+/g, '-')}')">Dodaj wiersz</button>
+    `;
+    document.getElementById('station-list').appendChild(section);
+  }
+  
+  // Wypełniamy tabelę edycyjną
+  const tbody = section.querySelector('tbody');
+  tbody.innerHTML = baza[name].map((row, idx) => `
+    <tr>
+      <td><input value="${row[0]||''}"></td>
+      <td><input value="${row[1]||''}"></td>
+      <td><input value="${row[2]||''}"></td>
+      <td><input value="${row[3]||''}"></td>
+      <td><input value="${row[4]||''}"></td>
+      <td><input value="${row[5]||''}"></td>
+      <td><input value="${row[6]||''}"></td>
+      <td><button class="danger" onclick="deleteRow('${name.replace(/'/g, "\\'")}', ${idx}, this)">Usuń</button></td>
+    </tr>
+  `).join('');
+}
+
+// Pozostałe funkcje (addRow, saveNewStation, renderStations, deleteRow, deleteStation, saveEdit, generateCode, downloadCode) – bez zmian
+
 function addRow(tableId) {
   const tbody = document.getElementById(tableId).querySelector('tbody');
   const row = tbody.insertRow();
@@ -121,68 +247,41 @@ function saveNewStation() {
   const rows = [...tbody.rows].map(r => [...r.querySelectorAll('input')].map(i => i.value.trim())).filter(r => r.some(v => v));
   if (rows.length === 0) return alert('Dodaj dane!');
   baza[name] = rows;
+  populateSelects();
   renderStations();
   document.getElementById('add-name').value = '';
   tbody.innerHTML = '';
 }
 
 function renderStations() {
-  const container = document.getElementById('station-list');
-  container.innerHTML = '';
-  Object.keys(baza).sort().forEach(name => {
-    const item = document.createElement('div');
-    item.className = 'station-item';
-    item.innerHTML = `
-      <div class="station-header">
-        <h2>${name}</h2>
-        <div class="station-actions">
-          <button onclick="editStation('${name.replace(/'/g, "\\'")}')">Edytuj</button>
-          <button class="danger" onclick="deleteStation('${name.replace(/'/g, "\\'")}')">Usuń</button>
-        </div>
-      </div>
-      <table id="table-${name.replace(/\s+/g, '-')}" data-name="${name}">
-        <thead><tr><th>od km</th><th>do km</th><th>Przyczyna</th><th>Nr toru</th><th>Vmax nieparzystym</th><th>Vmax parzystym</th><th>Uwagi</th><th>Akcje</th></tr></thead>
-        <tbody>${baza[name].map((r, i) => `<tr><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td><td>${r[4]||''}</td><td>${r[5]||''}</td><td>${r[6]||''}</td><td><button class="danger" onclick="deleteRow('${name.replace(/'/g, "\\'")}',${i})">Usuń</button></td></tr>`).join('')}</tbody>
-      </table>`;
-    container.appendChild(item);
-  });
+  // Można zostawić puste lub zostawić jako backup – teraz edycja dzieje się w dedykowanej sekcji
 }
 
-function deleteRow(name, i) {
+function deleteRow(name, idx, btn) {
   if (!confirm('Usunąć wiersz?')) return;
-  baza[name].splice(i, 1);
-  if (!baza[name].length) delete baza[name];
-  renderStations();
+  const tableId = btn.closest('table').id;
+  btn.closest('tr').remove();
+  // Aktualizacja bazy po usunięciu wiersza
+  const tbody = document.getElementById(tableId).querySelector('tbody');
+  const rows = Array.from(tbody.rows).map(r => Array.from(r.querySelectorAll('input')).map(i => i.value.trim())).filter(r => r.some(v => v));
+  baza[name] = rows.length ? rows : undefined;
+  if (!baza[name]) delete baza[name];
 }
 
 function deleteStation(name) {
   if (!confirm(`Usunąć "${name}"?`)) return;
   delete baza[name];
-  renderStations();
-}
-
-function editStation(name) {
-  const table = document.getElementById(`table-${name.replace(/\s+/g, '-')}`);
-  const tbody = table.querySelector('tbody');
-  tbody.innerHTML = baza[name].map((r, i) => `<tr><td><input value="${r[0]||''}"></td><td><input value="${r[1]||''}"></td><td><input value="${r[2]||''}"></td><td><input value="${r[3]||''}"></td><td><input value="${r[4]||''}"></td><td><input value="${r[5]||''}"></td><td><input value="${r[6]||''}"></td><td><button class="danger" onclick="deleteRow('${name.replace(/'/g, "\\'")}',${i})">Usuń</button></td></tr>`).join('');
-  const header = table.previousElementSibling;
-  header.querySelector('.station-actions').style.display = 'none';
-  const save = document.createElement('button');
-  save.textContent = 'Zapisz zmiany';
-  save.onclick = () => saveEdit(name);
-  header.appendChild(save);
-  const add = document.createElement('button');
-  add.textContent = 'Dodaj wiersz';
-  add.onclick = () => addRow(`table-${name.replace(/\s+/g, '-')}`);
-  header.appendChild(add);
+  const section = document.getElementById(`edit-${name.replace(/\s+/g, '-')}`);
+  if (section) section.remove();
+  populateSelects();
 }
 
 function saveEdit(name) {
-  const tbody = document.getElementById(`table-${name.replace(/\s+/g, '-')}`).querySelector('tbody');
+  const tbody = document.getElementById(`edit-table-${name.replace(/\s+/g, '-')}`).querySelector('tbody');
   const rows = Array.from(tbody.rows).map(r => Array.from(r.querySelectorAll('input')).map(i => i.value.trim())).filter(r => r.some(v => v));
   baza[name] = rows.length ? rows : undefined;
   if (!baza[name]) delete baza[name];
-  renderStations();
+  alert('Zmiany zapisane dla stacji ' + name);
 }
 
 function generateCode() {
