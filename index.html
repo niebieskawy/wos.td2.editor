@@ -62,39 +62,44 @@ async function loadBaza() {
                      encodeURIComponent('https://raw.githubusercontent.com/niebieskawy/wos.td2.editor/main/baza.js');
     
     const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error(`HTTP ${res.status} – ${res.statusText}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     
     let text = await res.text();
-    text = text.trim().replace(/^\uFEFF/, ''); // usuń BOM i białe znaki
+    text = text.trim().replace(/^\uFEFF/, '').replace(/\r\n/g, '\n'); // normalizacja
     
-    console.log('=== Pierwszy fragment (400 znaków) ===\n' + text.substring(0, 400));
-    console.log('Długość tekstu:', text.length);
+    console.log('=== Początek pliku (500 znaków) ===');
+    console.log(text.substring(0, 500));
+    console.log('Długość:', text.length);
     
-    // Najbardziej elastyczny regex – łapie aż do ostatniego }; przed końcem
-    const regex = /const\s+BAZA_OSTRZEZEN\s*=\s*(\{[\s\S]*?\})\s*;/;
-    const match = text.match(regex);
+    // Super-elastyczny parser: znajduje cały obiekt od { do ostatniego }; w pliku
+    const startIndex = text.indexOf('{');
+    if (startIndex === -1) throw new Error('Nie znaleziono początku obiektu {');
     
-    if (!match || !match[1]) {
-      console.log('Nie udało się dopasować. Ostatnie 500 znaków pliku:', text.slice(-500));
-      throw new Error('Nie znaleziono poprawnej definicji BAZA_OSTRZEZEN');
+    let braceCount = 1;
+    let endIndex = startIndex + 1;
+    while (endIndex < text.length && braceCount > 0) {
+      if (text[endIndex] === '{') braceCount++;
+      if (text[endIndex] === '}') braceCount--;
+      endIndex++;
     }
     
-    console.log('Znaleziono obiekt o długości:', match[1].length);
+    if (braceCount !== 0) throw new Error('Niezbalansowane nawiasy klamrowe');
     
-    const parser = new Function('return ' + match[1]);
+    const objectStr = text.substring(startIndex, endIndex);
+    console.log('Wyodrębniony obiekt ma', objectStr.length, 'znaków');
+    
+    const parser = new Function('return ' + objectStr);
     baza = parser();
     
     renderStations();
-    alert(`SUKCES! Wczytano ${Object.keys(baza).length} stacji.`);
+    alert(`Baza wczytana! Liczba stacji: ${Object.keys(baza).length}`);
   } catch (err) {
     console.error('Błąd:', err);
-    alert('Błąd wczytywania:\n' + err.message + '\n\nSprawdź konsolę (F12) – tam jest początek pliku.\nNapisz mi co pokazuje "Pierwszy fragment" – naprawimy.');
+    alert('Błąd: ' + err.message + '\n\nSprawdź konsolę – jeśli widzisz początek pliku z "Arkadia Zdrój", napisz mi to tutaj.');
   }
 }
 
-// Tutaj wklej wszystkie pozostałe funkcje z poprzedniej wersji (addRow, saveNewStation, renderStations itd.)
-// Dla kompletności – oto one (skopiuj i wklej poniżej loadBaza):
-
+// Pozostałe funkcje (bez zmian)
 function addRow(tableId) {
   const tbody = document.getElementById(tableId).querySelector('tbody');
   const row = tbody.insertRow();
@@ -135,7 +140,7 @@ function renderStations() {
           <button class="danger" onclick="deleteStation('${name.replace(/'/g, "\\'")}')">Usuń</button>
         </div>
       </div>
-      <table id="table-${name.replace(/\s+/g, '-')}">
+      <table id="table-${name.replace(/\s+/g, '-')}" data-name="${name}">
         <thead><tr><th>od km</th><th>do km</th><th>Przyczyna</th><th>Nr toru</th><th>Vmax nieparzystym</th><th>Vmax parzystym</th><th>Uwagi</th><th>Akcje</th></tr></thead>
         <tbody>${baza[name].map((r, i) => `<tr><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td><td>${r[4]||''}</td><td>${r[5]||''}</td><td>${r[6]||''}</td><td><button class="danger" onclick="deleteRow('${name.replace(/'/g, "\\'")}',${i})">Usuń</button></td></tr>`).join('')}</tbody>
       </table>`;
@@ -196,7 +201,7 @@ function generateCode() {
 
 function downloadCode() {
   const code = generateCode();
-  const blob = new Blob([code], {type: 'text/javascript'});
+  const blob = new Blob([code], {type: 'text/javascript;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
