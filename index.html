@@ -1,84 +1,28 @@
-Problem polegał na tym, że oryginalny kod próbował wczytać ./baza.js (lokalny plik), a nie raw z GitHuba.
-Oto naprawiona wersja całej strony – koncepcja zostaje dokładnie taka sama, tylko wczytywanie działa poprawnie:
-HTML<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
   <title>Edytor bazy WOS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      max-width: 1200px;
-      margin: 32px auto;
-      padding: 0 16px;
-      background: #f8f9fa;
-      color: #111;
-    }
+    body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 32px auto; padding: 0 16px; background: #f8f9fa; color: #111; }
     h1 { color: #1a3c6d; margin-bottom: 24px; }
     .field { margin: 16px 0; }
     label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 15px;
-      box-sizing: border-box;
-    }
+    input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: monospace; font-size: 15px; box-sizing: border-box; }
     textarea { min-height: 140px; resize: vertical; }
-    button {
-      padding: 10px 20px;
-      margin: 8px 8px 8px 0;
-      background: #1a3c6d;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-    }
+    button { padding: 10px 20px; margin: 8px 8px 8px 0; background: #1a3c6d; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
     button:hover { background: #254e8c; }
     button.danger { background: #dc3545; }
     button.danger:hover { background: #c82333; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
-      text-align: left;
-    }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
     th { background: #e3ebf5; font-weight: bold; }
     .station-list { margin: 24px 0; }
-    .station-item {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 16px;
-      margin-bottom: 24px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    .station-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
+    .station-item { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 16px; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .station-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .station-actions button { margin-left: 8px; }
-    pre#generated {
-      background: #1e1e1e;
-      color: #e0e0e0;
-      padding: 16px;
-      border-radius: 6px;
-      overflow: auto;
-      font-size: 14px;
-      white-space: pre-wrap;
-      word-break: break-all;
-      margin-top: 24px;
-    }
+    pre#generated { background: #1e1e1e; color: #e0e0e0; padding: 16px; border-radius: 6px; overflow: auto; font-size: 14px; white-space: pre-wrap; word-break: break-all; margin-top: 24px; }
     #download-btn { background: #28a745; }
     #download-btn:hover { background: #218838; }
     #load-btn { background: #17a2b8; }
@@ -99,14 +43,8 @@ HTML<!DOCTYPE html>
   <table id="add-table">
     <thead>
       <tr>
-        <th>od km</th>
-        <th>do km</th>
-        <th>Przyczyna</th>
-        <th>Nr toru</th>
-        <th>Vmax nieparzystym</th>
-        <th>Vmax parzystym</th>
-        <th>Uwagi</th>
-        <th>Akcje</th>
+        <th>od km</th><th>do km</th><th>Przyczyna</th><th>Nr toru</th>
+        <th>Vmax nieparzystym</th><th>Vmax parzystym</th><th>Uwagi</th><th>Akcje</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -119,7 +57,7 @@ HTML<!DOCTYPE html>
 <!-- Lista stacji -->
 <div id="station-list" class="station-list"></div>
 
-<!-- Generowanie kodu -->
+<!-- Generowanie -->
 <button onclick="generateCode()">Generuj kod baza.js</button>
 <button id="download-btn" onclick="downloadCode()">Pobierz plik baza.js</button>
 
@@ -129,31 +67,35 @@ HTML<!DOCTYPE html>
 // Globalna baza
 let baza = {};
 
-// Wczytywanie z GitHub (raw)
+// Proxy do ominięcia CORS (corsproxy.io jest stabilny w 2026)
+const PROXY = 'https://corsproxy.io/?';
+
 async function loadBaza() {
   try {
-    const res = await fetch('https://raw.githubusercontent.com/niebieskawy/wos.td2.editor/main/baza.js');
-    if (!res.ok) throw new Error('Błąd sieci: ' + res.status);
+    const url = PROXY + encodeURIComponent('https://raw.githubusercontent.com/niebieskawy/wos.td2.editor/main/baza.js');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     
     const text = await res.text();
     
-    // Wyciągamy obiekt z kodu (bezpieczniej niż eval całego pliku)
+    // Wyciągamy obiekt bezpiecznie
     const match = text.match(/const\s+BAZA_OSTRZEZEN\s*=\s*({[\s\S]*?});/);
-    if (!match) throw new Error('Nie znaleziono definicji BAZA_OSTRZEZEN');
+    if (!match) throw new Error('Nie znaleziono BAZA_OSTRZEZEN w pliku');
     
-    // Bezpieczne parsowanie – używamy Function zamiast eval
     const parser = new Function('return ' + match[1]);
     baza = parser();
     
     renderStations();
-    alert('Baza wczytana pomyślnie z GitHub!');
+    alert('Baza wczytana pomyślnie!');
   } catch (err) {
     console.error('Błąd wczytywania:', err);
-    alert('Nie udało się wczytać bazy.\n\nSprawdź konsolę (F12) lub spróbuj ponownie.\n\nMożliwe przyczyny:\n• GitHub blokuje (CORS/Rate limit)\n• Plik został zmieniony/usunięty\n• Brak internetu');
+    alert('Nie udało się wczytać bazy.\n\nSprawdź konsolę (F12).\nMożliwe przyczyny:\n• Limit zapytań do proxy\n• GitHub chwilowo niedostępny\n• Plik baza.js został usunięty/zmieniony\n\nSpróbuj ponownie za chwilę lub użyj VPN.');
   }
 }
 
-// Dodawanie wiersza do tabeli dodawania/edycji
+// Pozostałe funkcje bez zmian (addRow, saveNewStation, renderStations, deleteRow, deleteStation, editStation, saveEdit, generateCode, downloadCode)
+// ... (wklej tutaj cały blok funkcji z poprzedniej wersji, który zaczyna się od "function addRow(tableId) {" aż do końca)
+
 function addRow(tableId) {
   const tbody = document.getElementById(tableId).querySelector('tbody');
   const row = tbody.insertRow();
@@ -167,7 +109,6 @@ function addRow(tableId) {
   actionCell.innerHTML = '<button class="danger" onclick="this.closest(\'tr\').remove()">Usuń wiersz</button>';
 }
 
-// Zapisz nową stację
 function saveNewStation() {
   const name = document.getElementById('add-name').value.trim();
   if (!name) return alert('Podaj nazwę stacji!');
@@ -176,7 +117,7 @@ function saveNewStation() {
   const tbody = document.getElementById('add-table').querySelector('tbody');
   const rows = [...tbody.rows].map(r => 
     [...r.querySelectorAll('input')].map(i => i.value.trim())
-  ).filter(row => row.some(v => v)); // pomijamy całkowicie puste wiersze
+  ).filter(row => row.some(v => v));
   
   if (rows.length === 0) return alert('Dodaj przynajmniej jeden wiersz z danymi');
   
@@ -186,7 +127,6 @@ function saveNewStation() {
   tbody.innerHTML = '';
 }
 
-// Render wszystkich stacji
 function renderStations() {
   const container = document.getElementById('station-list');
   container.innerHTML = '';
@@ -229,7 +169,6 @@ function renderStations() {
   });
 }
 
-// Usuń wiersz
 function deleteRow(name, idx) {
   if (!confirm('Usunąć ten wiersz?')) return;
   baza[name].splice(idx, 1);
@@ -237,14 +176,12 @@ function deleteRow(name, idx) {
   renderStations();
 }
 
-// Usuń całą stację
 function deleteStation(name) {
   if (!confirm(`Na pewno usunąć stację "${name}"?`)) return;
   delete baza[name];
   renderStations();
 }
 
-// Edytuj stację (przełącz w tryb edycji)
 function editStation(name) {
   const table = document.getElementById(`table-${name.replace(/\s+/g, '-')}`);
   const tbody = table.querySelector('tbody');
@@ -266,25 +203,24 @@ function editStation(name) {
   const actions = header.querySelector('.station-actions');
   actions.style.display = 'none';
   
-  const saveBtn = document.createElement('button');
+  let saveBtn = document.createElement('button');
   saveBtn.textContent = 'Zapisz zmiany';
   saveBtn.onclick = () => saveEdit(name);
   header.appendChild(saveBtn);
   
-  const addBtn = document.createElement('button');
+  let addBtn = document.createElement('button');
   addBtn.textContent = 'Dodaj wiersz';
   addBtn.onclick = () => addRow(`table-${name.replace(/\s+/g, '-')}`);
   header.appendChild(addBtn);
 }
 
-// Zapisz edycję stacji
 function saveEdit(name) {
   const table = document.getElementById(`table-${name.replace(/\s+/g, '-')}`);
   const tbody = table.querySelector('tbody');
   
   const newRows = Array.from(tbody.rows).map(row => 
     Array.from(row.querySelectorAll('input')).map(i => i.value.trim())
-  ).filter(row => row.some(v => v)); // usuń całkowicie puste
+  ).filter(row => row.some(v => v));
   
   baza[name] = newRows.length > 0 ? newRows : undefined;
   if (!baza[name]) delete baza[name];
@@ -292,7 +228,6 @@ function saveEdit(name) {
   renderStations();
 }
 
-// Generuj kod JS
 function generateCode() {
   let code = `const BAZA_OSTRZEZEN = {\n`;
   
@@ -308,13 +243,12 @@ function generateCode() {
     code += '\n';
   });
   
-  code += `};\n\nexport default BAZA_OSTRZEZEN;`; // opcjonalny export
+  code += `};\n`;
   
   document.getElementById('generated').textContent = code;
   return code;
 }
 
-// Pobierz jako plik
 function downloadCode() {
   const code = generateCode();
   const blob = new Blob([code], { type: 'text/javascript;charset=utf-8' });
@@ -326,8 +260,8 @@ function downloadCode() {
   URL.revokeObjectURL(url);
 }
 
-// Automatyczne wczytanie przy starcie (możesz usunąć jeśli chcesz tylko na przycisk)
-window.addEventListener('load', loadBaza);
+// Start – możesz zostawić automatyczne wczytywanie lub usunąć linię poniżej
+// window.addEventListener('load', loadBaza);
 </script>
 </body>
 </html>
