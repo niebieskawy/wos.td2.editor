@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Edytor bazy WOS - dodawanie ostrzeżeń</title>
+<style>
+  body { font-family: sans-serif; max-width: 900px; margin: 30px auto; }
+  .field { margin: 12px 0; }
+  label { display: inline-block; width: 160px; font-weight: bold; }
+  input, textarea, select { width: 100%; max-width: 680px; padding: 6px; }
+  button { padding: 10px 20px; margin: 15px 0; background: #2c7; color: white; border: none; cursor: pointer; }
+  button:hover { background: #3a9; }
+  pre { background: #f8f8f8; padding: 15px; overflow: auto; border: 1px solid #ddd; white-space: pre-wrap; }
+  .help { color: #666; font-size: 0.9em; margin-top: -8px; }
+</style>
+</head>
+<body>
+
+<h2>Dodawanie nowego ostrzeżenia</h2>
+
+<div class="field">
+  <label>Nazwa stacji/posterunku:</label>
+  <input type="text" id="stacja" placeholder="np. Odolany, Arkadia Zdrój" required>
+</div>
+
+<div class="field">
+  <label>od km:</label>
+  <input type="text" id="od_km" placeholder="np. 1.234" size="12">
+</div>
+
+<div class="field">
+  <label>do km:</label>
+  <input type="text" id="do_km" placeholder="np. 1.567 lub zostaw puste">
+</div>
+
+<div class="field">
+  <label>Przyczyna:</label>
+  <input type="text" id="przyczyna" placeholder="np. zły stan toru" style="width:100%">
+</div>
+
+<div class="field">
+  <label>Nr toru:</label>
+  <input type="text" id="tor" placeholder="np. 1,2 lub 4 lub -">
+</div>
+
+<div class="field">
+  <label>Vmax nieparzystym:</label>
+  <input type="text" id="v_niepar" placeholder="np. 40 lub -">
+</div>
+
+<div class="field">
+  <label>Vmax parzystym:</label>
+  <input type="text" id="v_par" placeholder="np. 40 lub -">
+</div>
+
+<div class="field">
+  <label>Uwagi:</label>
+  <input type="text" id="uwagi" placeholder="np. * ) doraźne, Nowe!">
+</div>
+
+<button onclick="dodajOstrzezenie()">Dodaj → wygeneruj kod do wklejenia</button>
+
+<h3>Wygenerowany kod do wklejenia (kopiuj całość):</h3>
+<pre id="wynik"></pre>
+
+<script>
+function dodajOstrzezenie() {
+  const stacja = document.getElementById('stacja').value.trim();
+  if (!stacja) {
+    alert("Podaj nazwę stacji!");
+    return;
+  }
+
+  const pola = [
+    document.getElementById('od_km').value.trim(),
+    document.getElementById('do_km').value.trim(),
+    document.getElementById('przyczyna').value.trim(),
+    document.getElementById('tor').value.trim(),
+    document.getElementById('v_niepar').value.trim(),
+    document.getElementById('v_par').value.trim(),
+    document.getElementById('uwagi').value.trim()
+  ];
+
+  // Zamieniamy puste pola na pusty string
+  const wiersz = pola.map(v => v ? JSON.stringify(v) : '""');
+
+  const kod = `
+"${stacja.replace(/"/g,'\\"')}": [
+  [${wiersz.join(', ')}]
+],`;
+
+  document.getElementById('wynik').textContent = kod;
+}
+</script>
+
+</body>
+</html>
