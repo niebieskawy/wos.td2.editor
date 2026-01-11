@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body {
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: system-ui, sans-serif;
     max-width: 1200px;
     margin: 32px auto;
     padding: 0 16px;
@@ -14,7 +14,6 @@
     color: #111;
   }
   h1 { color: #1a3c6d; margin-bottom: 24px; }
-  h2 { color: #2c5282; }
   .field { margin: 16px 0; }
   label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; }
   input, textarea {
@@ -26,7 +25,7 @@
     font-size: 15px;
     box-sizing: border-box;
   }
-  textarea { min-height: 120px; resize: vertical; }
+  textarea { min-height: 140px; resize: vertical; }
   button {
     padding: 10px 20px;
     margin: 8px 8px 8px 0;
@@ -51,10 +50,13 @@
     text-align: left;
   }
   th { background: #e3ebf5; font-weight: bold; }
-  .station {
+  .station-list {
+    margin: 24px 0;
+  }
+  .station-item {
     background: white;
     border: 1px solid #ddd;
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 16px;
     margin-bottom: 24px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -85,152 +87,191 @@
 
 <h1>Edytor bazy WOS</h1>
 
-<div id="stations-container"></div>
+<!-- Sekcja dodawania nowej stacji -->
+<div id="add-section" class="field">
+  <label>Nazwa nowej stacji:</label>
+  <input type="text" id="add-name">
+  <table id="add-table">
+    <thead>
+      <tr>
+        <th>od km</th>
+        <th>do km</th>
+        <th>Przyczyna</th>
+        <th>Nr toru</th>
+        <th>Vmax nieparzystym</th>
+        <th>Vmax parzystym</th>
+        <th>Uwagi</th>
+        <th>Akcje</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <button onclick="addRow('add-table')">Dodaj wiersz</button>
+  <button onclick="saveNewStation()">Zapisz nową stację</button>
+</div>
 
-<button onclick="generateFullCode()">Generuj cały zaktualizowany kod baza.js</button>
+<!-- Lista stacji -->
+<div id="station-list" class="station-list"></div>
 
-<pre id="generated">// kliknij przycisk aby wygenerować</pre>
+<!-- Generuj kod -->
+<button onclick="generateCode()">Generuj kod baza.js</button>
+
+<pre id="generated"></pre>
 
 <script>
-// Globalna baza – będzie nadpisywana po załadowaniu
+// Baza
 let baza = {};
 
-// 1. Ładowanie bazy z pliku baza.js
+// Wczytaj baza.js
 async function loadBaza() {
   try {
-    const response = await fetch('./baza.js');
-    if (!response.ok) throw new Error('Nie można wczytać baza.js');
-    const text = await response.text();
-
-    // Wyciągamy obiekt po export const BAZA_OSTRZEZEN =
+    const res = await fetch('./baza.js');
+    const text = await res.text();
     const match = text.match(/export\s+const\s+BAZA_OSTRZEZEN\s*=\s*({[\s\S]*?});/);
-    if (!match) throw new Error('Nie znaleziono poprawnego eksportu');
-
-    // Bezpieczne parsowanie
-    baza = new Function(`return ${match[1]}`)();
-    renderAllStations();
+    if (match) baza = eval(`(${match[1]})`);
+    renderStations();
   } catch (err) {
-    console.error('Błąd ładowania bazy:', err);
-    document.getElementById('stations-container').innerHTML = 
-      `<p style="color:red; font-weight:bold;">Błąd wczytywania baza.js: ${err.message}</p>`;
+    console.error(err);
   }
 }
 
-// 2. Renderowanie wszystkich stacji
-function renderAllStations() {
-  const container = document.getElementById('stations-container');
-  container.innerHTML = '';
-
+// Renderuj stacje
+function renderStations() {
+  const list = document.getElementById('station-list');
+  list.innerHTML = '';
   Object.keys(baza).sort().forEach(name => {
-    const rows = baza[name];
-    const section = document.createElement('div');
-    section.className = 'station';
-    section.innerHTML = `
+    const div = document.createElement('div');
+    div.className = 'station-item';
+    div.innerHTML = `
       <div class="station-header">
-        <h2>${name} (${rows.length} ostrzeżeń)</h2>
+        <h2>${name}</h2>
         <div class="station-actions">
-          <button onclick="editStation('${name.replace(/'/g, "\\'")}')">Edytuj</button>
-          <button class="danger" onclick="deleteStation('${name.replace(/'/g, "\\'")}')">Usuń</button>
+          <button onclick="editStation('${name}')">Edytuj</button>
+          <button class="danger" onclick="deleteStation('${name}')">Usuń</button>
         </div>
       </div>
-      <table>
+      <table id="table-${name.replace(/\s/g, '-')}">
         <thead>
           <tr>
             <th>od km</th>
             <th>do km</th>
             <th>Przyczyna</th>
             <th>Nr toru</th>
-            <th>Vmax nieparz.</th>
-            <th>Vmax parz.</th>
+            <th>Vmax nieparzystym</th>
+            <th>Vmax parzystym</th>
             <th>Uwagi</th>
+            <th>Akcje</th>
           </tr>
         </thead>
         <tbody>
-          ${rows.map(row => `
+          ${baza[name].map((row, i) => `
             <tr>
-              <td>${row[0] ?? ''}</td>
-              <td>${row[1] ?? ''}</td>
-              <td>${row[2] ?? ''}</td>
-              <td>${row[3] ?? ''}</td>
-              <td>${row[4] ?? ''}</td>
-              <td>${row[5] ?? ''}</td>
-              <td>${row[6] ?? ''}</td>
+              <td>${row[0]}</td>
+              <td>${row[1]}</td>
+              <td>${row[2]}</td>
+              <td>${row[3]}</td>
+              <td>${row[4]}</td>
+              <td>${row[5]}</td>
+              <td>${row[6]}</td>
+              <td><button class="danger" onclick="deleteRow('${name}', ${i})">Usuń</button></td>
             </tr>
           `).join('')}
         </tbody>
       </table>
     `;
-    container.appendChild(section);
+    list.appendChild(div);
   });
 }
 
-// 3. Usuwanie całej stacji
-function deleteStation(name) {
-  if (!confirm(`Na pewno usunąć stację "${name}"?`)) return;
-  delete baza[name];
-  renderAllStations();
+// Dodaj wiersz do tabeli
+function addRow(tableId) {
+  const tbody = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+  const row = tbody.insertRow();
+  for (let i = 0; i < 7; i++) {
+    const cell = row.insertCell();
+    const input = document.createElement('input');
+    input.type = 'text';
+    cell.appendChild(input);
+  }
+  const actionCell = row.insertCell();
+  actionCell.innerHTML = '<button class="danger" onclick="this.parentNode.parentNode.remove()">Usuń</button>';
 }
 
-// 4. Edycja stacji (prosta – prompt z JSON)
+// Zapisz nową stację
+function saveNewStation() {
+  const name = document.getElementById('add-name').value.trim();
+  if (!name) return alert('Podaj nazwę');
+  if (baza[name]) return alert('Stacja istnieje');
+  const tbody = document.getElementById('add-table').getElementsByTagName('tbody')[0];
+  const rows = Array.from(tbody.rows).map(row => Array.from(row.querySelectorAll('input')).map(inp => inp.value.trim()));
+  if (rows.length === 0 || rows.every(row => row.every(cell => !cell))) return alert('Dodaj wiersze');
+  baza[name] = rows;
+  renderStations();
+  document.getElementById('add-name').value = '';
+  tbody.innerHTML = '';
+}
+
+// Edytuj stację
 function editStation(name) {
-  const current = baza[name];
-  const json = JSON.stringify(current, null, 2);
-  const newJson = prompt(`Edytuj wiersze stacji "${name}" (JSON tablica tablic):`, json);
-  if (!newJson) return;
+  const table = document.getElementById(`table-${name.replace(/\s/g, '-')}`);
+  const tbody = table.getElementsByTagName('tbody')[0];
+  tbody.innerHTML = baza[name].map((row, i) => `
+    <tr>
+      <td><input value="${row[0]}"></td>
+      <td><input value="${row[1]}"></td>
+      <td><input value="${row[2]}"></td>
+      <td><input value="${row[3]}"></td>
+      <td><input value="${row[4]}"></td>
+      <td><input value="${row[5]}"></td>
+      <td><input value="${row[6]}"></td>
+      <td><button class="danger" onclick="deleteRow('${name}', ${i})">Usuń</button></td>
+    </tr>
+  `).join('');
+  const header = table.parentNode.querySelector('.station-header');
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Zapisz';
+  saveBtn.onclick = () => saveEdit(name);
+  header.appendChild(saveBtn);
+  const addBtn = document.createElement('button');
+  addBtn.textContent = 'Dodaj wiersz';
+  addBtn.onclick = () => addRow(`table-${name.replace(/\s/g, '-')}`);
+  header.appendChild(addBtn);
+}
 
-  try {
-    const parsed = JSON.parse(newJson);
-    if (!Array.isArray(parsed)) throw new Error();
-    baza[name] = parsed;
-    renderAllStations();
-  } catch {
-    alert("Błędny format JSON!");
+// Zapisz edycję
+function saveEdit(name) {
+  const tbody = document.getElementById(`table-${name.replace(/\s/g, '-')}`).getElementsByTagName('tbody')[0];
+  const rows = Array.from(tbody.rows).map(row => Array.from(row.querySelectorAll('input')).map(inp => inp.value.trim()));
+  baza[name] = rows;
+  renderStations();
+}
+
+// Usuń wiersz
+function deleteRow(name, i) {
+  baza[name].splice(i, 1);
+  renderStations();
+}
+
+// Usuń stację
+function deleteStation(name) {
+  if (confirm(`Usuń "${name}"?`)) {
+    delete baza[name];
+    renderStations();
   }
 }
 
-// 5. Dodawanie nowej stacji
-function addNewStation() {
-  const name = prompt("Nazwa nowej stacji:");
-  if (!name || baza[name]) {
-    if (name) alert("Stacja już istnieje!");
-    return;
-  }
-
-  const json = prompt("Wklej wiersze w formacie JSON tablicy tablic:", '[\n  ["","","","","","",""]\n]');
-  if (!json) return;
-
-  try {
-    const parsed = JSON.parse(json);
-    if (!Array.isArray(parsed)) throw new Error();
-    baza[name] = parsed;
-    renderAllStations();
-  } catch {
-    alert("Błędny format JSON!");
-  }
-}
-
-// 6. Generowanie całego kodu
-function generateFullCode() {
+// Generuj kod
+function generateCode() {
   let code = 'export const BAZA_OSTRZEZEN = {\n';
-  Object.keys(baza).sort().forEach((key, i, arr) => {
-    const json = JSON.stringify(baza[key], null, 2)
-      .replace(/^(\[)/gm, '$1\n  ')
-      .replace(/(\])$/, '\n$1');
-    code += `  "${key.replace(/"/g, '\\"')}": ${json}${i < arr.length - 1 ? ',' : ''}\n`;
+  Object.keys(baza).sort().forEach((key, idx, keys) => {
+    code += `  "${key}": ${JSON.stringify(baza[key], null, 2).replace(/^\[/, '[\n    ').replace(/\]$/, '\n  ]')}${idx < keys.length - 1 ? ',' : ''}\n`;
   });
-  code += '};\n';
-
-  document.getElementById('code-output').textContent = code;
+  code += '};';
+  document.getElementById('generated').textContent = code;
 }
 
 // Start
-document.addEventListener('DOMContentLoaded', loadBaza);
+loadBaza();
 </script>
-
-<!-- Przycisk dodawania nowej stacji -->
-<div style="position: fixed; bottom: 24px; right: 24px;">
-  <button onclick="addNewStation()">+ Nowa stacja</button>
-</div>
-
 </body>
 </html>
