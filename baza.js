@@ -1,34 +1,43 @@
 const BAZA_OSTRZEZEN = {
-"Arkadia Zdrój": [
-    ["0.563", "0.585", "zły stan techniczny wiaduktu", "4", "70", "70", "* ) doraźne"],
-    ["30.318", "30.335", "zły stan techniczny wiaduktu", "1,2", "70", "70", "* ) doraźne"]
+  "Aleksandrów Kujawski": [
+    ["90,356", "90,552", "zły stan techniczny rozjazdu nr 3 i 6", "1", "80", "80", "-"],
+    ["90,402", "90,540", "zły stan techniczny rozjazdu nr 4 i 5", "2", "80", "80", "-"],
+    ["90,530", "90,570", "zły stan techniczny rozjazdu nr 7", "104", "10", "10", "dotyczy jazd na wprost i na kierunek zwrotny"]
   ],
-  "Berety Kamielskie": [
-    ["40.635", "41.302", "Prace torowe na sąsiednim torze", "6", "20", "20", ""]
+  "Arkadia Zdrój 2012": [
+    ["3,270", "3,280", "zły stan wiaduktu", "1", "20", "20", ""],
+    ["30,672", "31,480", "zły stan toru", "3, 5", "20", "20", ""],
+    ["31,540", "31,573", "zły stan rozjazdu nr 23", "1", "40", "40", ""],
+    ["34,396", "34,845", "ostry łuk R396, krótkie krzywe przejściowe", "1, 2", "50", "50", ""]
+  ],
+  "Arkadia Zdrój 2022": [
+    ["30,318", "30,335", "zły stan techniczny wiaduktu", "1, 2", "70", "70", "doraźne"],
+    ["0,563", "0,585", "zły stan techniczny wiaduktu", "4", "70", "70", "doraźne"]
+  ],
+  "Blaszki": [
+    ["127,588", "127,849", "zły stan toru", "2", "60", "60", ""]
+  ],
+  "Brenno": [
+    ["56,121", "56,188", "zły stan rozjazdu nr 5", "1", "60", "60", ""],
+    ["57,171", "57,232", "zły stan rozjazdu nr 23", "4, 6", "20", "20", "Nowe! ograniczenie doraźne"]
   ],
   "Brzezinka Średzka": [
-    ["13.800", "15.100", "zły stan toru", "2", "40", "40", "273"],
-    ["19.960", "20.195", "zły stan toru", "1", "70", "70", ""],
-    ["20.620", "21.400", "zły stan toru", "4", "20", "20", ""],
-    ["21.480", "21.513", "zły stan toru", "2", "100", "100", ""],
-    ["21.530", "21.890", "zły stan toru", "1", "70", "70", ""],
-    ["22.486", "22.926", "brak widoczności na przejeździe w km 22.926", "1", "70", "-", ""],
-    ["22.926", "23.296", "", "1", "-", "60", ""],
-    ["22.926", "23.926", "", "2", "-", "50", ""]
+    ["13,800", "15,100", "zły stan toru", "2", "40", "40", "273"],
+    ["19,960", "20,195", "zły stan toru", "1", "70", "70", ""],
+    ["20,620", "21,400", "zły stan toru", "4", "20", "20", ""],
+    ["21,480", "21,513", "zły stan toru", "2", "100", "100", ""],
+    ["21,530", "21,890", "zły stan toru", "1", "70", "70", ""],
+    ["22,486", "22,926", "brak widoczności na przejeździe w km 22,926", "1", "70", "-", ""],
+    ["22,926", "23,296", "brak widoczności na przejeździe w km 22,926", "1", "-", "60", ""],
+    ["22,926", "23,926", "brak widoczności na przejeździe w km 22,926", "2", "-", "50", ""]
   ],
   "Chełmik Wołowski": [
     ["39.430", "39.500", "Zły stan przejścia rozjazdowego", "-", "20", "20", "dotyczy przejścia 5-6, jazda zwrotna"]
   ],
-  "Dąbrówno": [
-    ["92.190", "92.030", "zły stan rozjazdu nr 5", "1", "60", "60", ""],
-    ["92.190", "92.280", "zły stan toru", "3", "20", "20", ""],
-    ["92.290", "93.040", "zły stan toru", "4", "30", "30", ""],
-    ["93.040", "93.050", "zły stan toru", "4", "20", "20", ""],
-    ["93.040", "93.090", "zły stan rozjazdu nr 18", "2", "60", "60", ""]
-  ],
   "Dobrzyca Towarowa": [
-    ["7.757", "8.009", "Zły stan rozjazdów 201,203,208,272", "202", "20", "20", "* )"],
-    ["7.839", "8.014", "Zły stan głowicy rozj. 230-251,231-254", "10", "10", ""]
+    ["7,757", "8,009", "Zły stan rozjazdów 201,203,208,272", "202", "20", "20", "* )"],
+    ["7,839", "8,014", "Zły stan głowicy rozj. 230-251,231-254", "10", "10", "", ""],
+    ["4,029", "4,029", "punkt kontrolny DSAT", "2", "-", "-", "utrzymać stałą prędkość dla całej długości składu"]
   ],
   "Dobrzyniec": [
     ["102.992", "103.066", "tor po naprawie", "1", "40", "40", "Nowe!"]
@@ -36,17 +45,17 @@ const BAZA_OSTRZEZEN = {
   "Dobrzyniec Mącice": [
     ["104.773", "105.491", "zły stan techniczny toru", "4", "20", "20", "* )"]
   ],
-  "Kruszki": [
-    ["1.703", "1.802", "tor po naprawie", "1", "40", "40", "Nowe!"],
-    ["109.532", "109.642", "zły stan podkładów", "2", "80", "80", ""]
-  ],
-  "Wampirzyce": [
-    ["120.721", "120.729", "zły stan obiektu inżynieryjnego", "1,2", "60", "60", "doraźne"]
-  ],
   "Dziewoszyce": [
     ["74.243", "77.337", "Rozj 2 i 3 zły stan podrozjezdnic", "1", "60", "60", ""],
     ["77.449", "77.460", "", "2", "20", "20", ""],
     ["77.451", "77.463", "ograniczona widoczność na przejeździe", "1", "20", "20", "tylko czoło"]
+  ],
+  "Dąbrówno": [
+    ["92.190", "92.030", "zły stan rozjazdu nr 5", "1", "60", "60", ""],
+    ["92.190", "92.280", "zły stan toru", "3", "20", "20", ""],
+    ["92.290", "93.040", "zły stan toru", "4", "30", "30", ""],
+    ["93.040", "93.050", "zły stan toru", "4", "20", "20", ""],
+    ["93.040", "93.090", "zły stan rozjazdu nr 18", "2", "60", "60", ""]
   ],
   "Florek": [
     ["4.475", "5.300", "Urządzenia SRK do 70 km/h", "1", "-", "70", ""]
@@ -68,10 +77,6 @@ const BAZA_OSTRZEZEN = {
   "Hetmanice": [
     ["128.340", "128.580", "Tor po naprawie", "2", "80", "80", ""]
   ],
-  "Kudowa Zdrój": [
-    ["38.058", "38.058", "ograniczona widoczność na przejeździe", "1", "20", "20", "tylko czoło"],
-    ["39.024", "39.018", "zły stan toru", "1", "20", "", ""]
-  ],
   "Kieły": [
     ["15.165", "15.180", "ograniczona widoczność na przejeździe", "1", "20", "20", "tylko czoło"]
   ],
@@ -92,8 +97,16 @@ const BAZA_OSTRZEZEN = {
     ["108.334", "108.341", "zły stan rozjazdu nr 200", "204", "20", "20", "zwrotny, doraźne"],
     ["108.339", "108.481", "geometria łuku", "203", "25", "25", ""]
   ],
+  "Kruszki": [
+    ["1.703", "1.802", "tor po naprawie", "1", "40", "40", "Nowe!"],
+    ["109.532", "109.642", "zły stan podkładów", "2", "80", "80", ""]
+  ],
   "Kszęty": [
     ["131.964", "131.972", "zły stan toru", "1,2", "20", "20", ""]
+  ],
+  "Kudowa Zdrój": [
+    ["38.058", "38.058", "ograniczona widoczność na przejeździe", "1", "20", "20", "tylko czoło"],
+    ["39.024", "39.018", "zły stan toru", "1", "20", "", ""]
   ],
   "LCS Grodzisk Mazowiecki": [
     ["4.707", "5.110", "brak drogi hamowania przed przejazdem km 4.702", "1", "-", "40", "przeciwny kierunek"]
@@ -118,17 +131,6 @@ const BAZA_OSTRZEZEN = {
   "Lisków": [
     ["66.190", "66.976", "Zły stan toru", "6", "20", "20", "* )"],
     ["66.248", "67.002", "Zły stan toru", "8", "20", "20", "* )"]
-  ],
-  "Łapanów": [
-    ["143.017", "143.060", "zły stan obiektu inż.", "1", "50", "50", ""],
-    ["145.754", "146.545", "zły stan podtorza", "10", "30", "30", ""],
-    ["177.455", "177.566", "zły stan mostownic", "1,2", "70", "70", ""],
-    ["182.604", "182.631", "zły stan przepustu", "1,2", "100", "100", ""]
-  ],
-  "Łąck": [
-    ["31.659", "31.984", "ograniczona widoczność", "1", "60", "-", ""],
-    ["33.591", "33.930", "ograniczona widoczność", "1", "60", "-", ""],
-    ["38.026", "38.038", "przekroczony iloczyn ruchu", "1", "50", "50", ""]
   ],
   "Minkowice": [
     ["190.600", "191.750", "układ geometryczny toru", "1", "100", "100", "LK7"]
@@ -213,8 +215,8 @@ const BAZA_OSTRZEZEN = {
   "Trzymałkowice": [
     ["63.135", "63.148", "Zły stan wiaduktu", "1", "40", "40", ""]
   ],
-  "Worszowice - Strumień": [
-    ["4.532", "5.052", "ograniczona widoczność", "1,2", "80", "80", "* )"]
+  "Wampirzyce": [
+    ["120.721", "120.729", "zły stan obiektu inżynieryjnego", "1,2", "60", "60", "doraźne"]
   ],
   "Wełtawa": [
     ["62.579", "62.612", "Zły stan rozjazdu", "2", "50", "50", ""],
@@ -233,6 +235,9 @@ const BAZA_OSTRZEZEN = {
     ["46.644", "46.710", "zły stan rozjazdu krzyżowego 24", "2", "70", "70", "Nowe!"],
     ["46.676", "46.781", "niestabilne podtorze", "6", "60", "60", "doraźne"],
     ["48.503", "48.516", "Przekroczony iloczyn ruchu", "1", "50", "50", "tylko czoło * )"]
+  ],
+  "Worszowice - Strumień": [
+    ["4.532", "5.052", "ograniczona widoczność", "1,2", "80", "80", "* )"]
   ],
   "Wronowice": [
     ["73.376", "73.581", "Zły stan krawędzi peronu", "1", "60", "60", ""],
@@ -254,5 +259,16 @@ const BAZA_OSTRZEZEN = {
     ["", "", "Wjazd na tor zakończony kozłem", "8", "-", "20", ""],
     ["153.660", "153.930", "układ geometryczny toru", "1", "80", "80", "273"],
     ["154.510", "154.810", "układ geometryczny toru", "1", "80", "80", "273 na stacji"]
+  ],
+  "Łapanów": [
+    ["143.017", "143.060", "zły stan obiektu inż.", "1", "50", "50", ""],
+    ["145.754", "146.545", "zły stan podtorza", "10", "30", "30", ""],
+    ["177.455", "177.566", "zły stan mostownic", "1,2", "70", "70", ""],
+    ["182.604", "182.631", "zły stan przepustu", "1,2", "100", "100", ""]
+  ],
+  "Łąck": [
+    ["31.659", "31.984", "ograniczona widoczność", "1", "60", "-", ""],
+    ["33.591", "33.930", "ograniczona widoczność", "1", "60", "-", ""],
+    ["38.026", "38.038", "przekroczony iloczyn ruchu", "1", "50", "50", ""]
   ]
-}
+};
