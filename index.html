@@ -282,6 +282,8 @@ function saveEdit(name) {
   baza[name] = rows.length ? rows : undefined;
   if (!baza[name]) delete baza[name];
   alert('Zmiany zapisane dla stacji ' + name);
+    const section = document.getElementById(`edit-${name.replace(/\s+/g, '-')}`);
+  if (section) section.remove();
 }
 
 function generateCode() {
