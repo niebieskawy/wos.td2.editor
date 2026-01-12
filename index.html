@@ -696,10 +696,9 @@
       overlay.classList.add('active');
 
       try {
-        const proxyUrl = 'https://api.allorigins.win/raw?url=' + 
-                         encodeURIComponent('https://raw.githubusercontent.com/niebieskawy/wos.td2.editor/main/baza.js');
+        const url = 'https://raw.githubusercontent.com/niebieskawy/wos.td2.editor/main/baza.js';
         
-        const res = await fetch(proxyUrl);
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         let text = await res.text();
