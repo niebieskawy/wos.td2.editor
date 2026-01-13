@@ -1198,10 +1198,15 @@
       Object.keys(baza).sort((a, b) => a.localeCompare(b, 'pl')).forEach((k, i, a) => {
         code += `  "${k.replace(/"/g, '\\"')}": [\n`;
         baza[k].forEach((r, j) => {
-          code += `    [${r.map(v => `"${v.replace(/"/g, '\\"')}"`).join(', ')}]`;
+          code += `    [`;
+          for (let idx = 0; idx < r.length; idx++) {
+            code += `"${r[idx].replace(/"/g, '\\"')}"`;
+            if (idx < r.length - 1) code += ', ';
+          }
+          code += `]`;
           code += j < baza[k].length - 1 ? ',\n' : '\n';
         });
-        code += `  ]${i < a.length - 1 ? ',' : ''}\n`;
+        code += `  ],\n`;
       });
       
       code += `};\n\nWygenerowano: ${new Date().toLocaleString('pl-PL')}\nEdytor WOS Professional Edition`;
