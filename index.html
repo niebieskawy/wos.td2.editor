@@ -430,6 +430,8 @@
 
   <script>
     const PIN_HASH = 'MjEzNzIxMzc='; // 21372137
+    // DEFINICJA KLUCZY DLA BAZY - W KOLEJNOŚCI KOLUMN
+    const ROW_KEYS = ['stacja', 'odkm', 'dokm', 'przyczyna', 'tor', 'vniep', 'vparz', 'uwagi'];
 
     function decodePIN(encoded) {
       try { return atob(encoded); } catch (e) { return null; }
@@ -528,13 +530,17 @@
       if (!rows || rows.length === 0) throw new Error('Stacja musi mieć co najmniej jeden wiersz');
       
       rows.forEach((row, index) => {
-        ['od km', 'do km'].forEach((field, fieldIndex) => {
-          if (row[fieldIndex + 1] && row[fieldIndex + 1].trim()) { // +1 bo 0 to nazwa
-            const kmValue = row[fieldIndex + 1].replace('.', ',');
-            if (!/^\d+(,\d+)?$/.test(kmValue)) {
-              // Możemy ewentualnie pominąć ten błąd, jeśli dane historyczne są luźne
+        // Walidacja odkm i dokm
+        const odkm = row['odkm'];
+        const dokm = row['dokm'];
+        
+        [odkm, dokm].forEach(kmValue => {
+            if (kmValue && kmValue.trim()) {
+                const formatted = kmValue.replace('.', ',');
+                if (!/^\d+(,\d+)?$/.test(formatted)) {
+                   // Tutaj można dodać strict validation jeśli potrzeba
+                }
             }
-          }
         });
       });
     }
@@ -546,7 +552,6 @@
       overlay.classList.add('active');
 
       try {
-        // Próba załadowania z zewnętrznego źródła
         const url = 'https://raw.githubusercontent.com/niebieskawy/wos.td2.editor/main/baza.js';
         const res = await fetch(url);
         
@@ -554,7 +559,6 @@
         if (res.ok) {
            text = await res.text();
         } else {
-           // Fallback do pustej bazy jeśli fetch nie zadziała (np. CORS)
            console.warn('Nie udało się pobrać bazy (CORS?), startuję z pustą.');
            text = "export default {}";
         }
@@ -575,7 +579,6 @@
         if (count !== 0) throw new Error('Niezbalansowane klamry');
         
         const jsonStr = text.substring(start, end);
-        // Użycie Function zamiast eval dla odrobinę lepszego bezpieczeństwa
         const parser = new Function('return ' + jsonStr);
         baza = parser();
         
@@ -627,7 +630,6 @@
       const safeId = name.replace(/[^a-zA-Z0-9]/g, '-');
       let section = document.getElementById(`edit-${safeId}`);
       
-      // Jeśli sekcja już jest, usuń ją (odświeżanie)
       if (section) section.remove();
       
       section = document.createElement('div');
@@ -667,16 +669,17 @@
       document.getElementById('station-list').prepend(section);
       
       const tbody = section.querySelector('tbody');
+      
       tbody.innerHTML = baza[name].map((row, idx) => `
         <tr>
-          <td><input value="${row[0]||''}" placeholder="szlak/stacja"></td>
-          <td><input value="${row[1]||''}" placeholder="od km"></td>
-          <td><input value="${row[2]||''}" placeholder="do km"></td>
-          <td><input value="${row[3]||''}" placeholder="przyczyna"></td>
-          <td><input value="${row[4]||''}" placeholder="tor"></td>
-          <td><input value="${row[5]||''}" placeholder="Vmax nieparzystym"></td>
-          <td><input value="${row[6]||''}" placeholder="Vmax parzystym"></td>
-          <td><input value="${row[7]||''}" placeholder="uwagi"></td>
+          <td><input value="${row['stacja']||''}" placeholder="szlak/stacja"></td>
+          <td><input value="${row['odkm']||''}" placeholder="od km"></td>
+          <td><input value="${row['dokm']||''}" placeholder="do km"></td>
+          <td><input value="${row['przyczyna']||''}" placeholder="przyczyna"></td>
+          <td><input value="${row['tor']||''}" placeholder="tor"></td>
+          <td><input value="${row['vniep']||''}" placeholder="Vmax nieparzystym"></td>
+          <td><input value="${row['vparz']||''}" placeholder="Vmax parzystym"></td>
+          <td><input value="${row['uwagi']||''}" placeholder="uwagi"></td>
           <td>
             <button class="btn-danger" onclick="deleteRow('${name.replace(/'/g, "\\'")}', ${idx}, this)">
               <i class="fas fa-trash"></i>
@@ -693,8 +696,8 @@
       const row = tbody.insertRow();
       row.className = 'fade-in';
       
-      const fields = ['stacjaSzlak', 'od km', 'do km', 'przyczyna', 'tor', 'Vmax nieparzystym', 'Vmax parzystym', 'uwagi'];
-      fields.forEach((placeholder) => {
+      const placeholders = ['stacjaSzlak', 'od km', 'do km', 'przyczyna', 'tor', 'Vmax nieparzystym', 'Vmax parzystym', 'uwagi'];
+      placeholders.forEach((placeholder) => {
         const cell = row.insertCell();
         const input = document.createElement('input');
         input.type = 'text';
@@ -710,13 +713,30 @@
       `;
     }
 
+    // Funkcja pomocnicza do pobierania danych z wiersza jako obiekt
+    function getRowData(tr) {
+        const inputs = Array.from(tr.querySelectorAll('input'));
+        const obj = {};
+        inputs.forEach((input, index) => {
+            // Mapowanie indeksu inputa na klucz obiektu
+            if (ROW_KEYS[index]) {
+                obj[ROW_KEYS[index]] = input.value.trim();
+            }
+        });
+        return obj;
+    }
+
+    // Funkcja pomocnicza do pobierania wszystkich wierszy z tabeli jako tablica obiektów
+    function getTableData(tableElement) {
+        const tbody = tableElement.querySelector('tbody');
+        return Array.from(tbody.rows).map(row => getRowData(row));
+    }
+
     function saveNewStation() {
       try {
         const name = document.getElementById('add-name').value.trim();
-        const tbody = document.getElementById('add-table').querySelector('tbody');
-        const rows = [...tbody.rows].map(r => 
-          [...r.querySelectorAll('input')].map(i => i.value.trim())
-        );
+        const table = document.getElementById('add-table');
+        const rows = getTableData(table); // Zwraca tablicę obiektów z kluczami
 
         validateStationData(name, rows);
 
@@ -729,7 +749,7 @@
         updateStats();
         
         document.getElementById('add-name').value = '';
-        tbody.innerHTML = '';
+        table.querySelector('tbody').innerHTML = '';
         
         showNotification(`Stacja "${name}" została zapisana`, 'success');
         
@@ -742,18 +762,13 @@
       if (!confirm('Usunąć ten wiersz?')) return;
       
       const tableId = btn.closest('table').id;
-      btn.closest('tr').remove();
+      const row = btn.closest('tr');
+      row.remove();
       
-      // Aktualizacja bazy od razu po usunięciu wiersza
-      // Pobieramy dane z tabeli
-      const tbody = document.getElementById(tableId).querySelector('tbody');
-      const rows = Array.from(tbody.rows).map(r => 
-        Array.from(r.querySelectorAll('input')).map(i => i.value.trim())
-      );
+      // Aktualizacja bazy z zachowaniem struktury kluczy
+      const table = document.getElementById(tableId);
+      const rows = getTableData(table);
       
-      // Jeśli rows jest puste, to znaczy że usunęliśmy ostatni wiersz. 
-      // Zazwyczaj chcemy zachować stację nawet bez wierszy lub usunąć stację.
-      // Tutaj po prostu aktualizujemy wpis.
       baza[name] = rows;
       
       updateStats();
@@ -799,13 +814,10 @@
         const newName = nameInput.value.trim();
         
         const table = document.getElementById(`edit-table-${safeId}`);
-        const rows = [...table.querySelectorAll('tbody tr')].map(r => 
-          [...r.querySelectorAll('input')].map(i => i.value.trim())
-        );
+        const rows = getTableData(table); // Zwraca tablicę obiektów z kluczami
         
         validateStationData(newName, rows);
         
-        // Jeśli nazwa się zmieniła
         if (newName !== oldName) {
             if (baza[newName] && !confirm(`Stacja o nazwie "${newName}" już istnieje. Czy chcesz ją nadpisać?`)) {
                 return;
@@ -819,9 +831,7 @@
         updateStats();
         populateSelects();
         
-        // Odśwież widok (przeładuj kartę edycji z nowymi danymi)
         loadSelectedStation();
-        // Hack: ustaw wartość w select/search na nową nazwę, by było jasne co edytujemy
         document.getElementById('station-search').value = newName;
         
       } catch (e) {
@@ -836,8 +846,9 @@
       const sortedBaza = {};
       sortedKeys.forEach(k => sortedBaza[k] = baza[k]);
       
+      // JSON.stringify automatycznie uwzględni klucze (stacja, odkm, etc.)
       const jsonContent = JSON.stringify(sortedBaza, null, 2);
-      // Format zgodny z oryginalnym plikiem baza.js
+      
       const finalCode = `const BAZA_OSTRZEZEN = ${jsonContent};\n\nexport default BAZA_OSTRZEZEN;`;
       
       document.getElementById('generated').textContent = finalCode;
