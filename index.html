@@ -516,9 +516,153 @@
       color: var(--text-secondary);
       font-size: 0.9rem;
     }
+
+    .auth-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.5s, visibility 0.5s;
+    }
+
+    .auth-overlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .auth-modal {
+      background: var(--bg-primary);
+      border-radius: 20px;
+      padding: 50px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 450px;
+      width: 90%;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .auth-icon {
+      font-size: 4rem;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+
+    .auth-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .auth-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 30px;
+      font-size: 1rem;
+    }
+
+    .pin-input {
+      width: 100%;
+      padding: 18px;
+      font-size: 1.5rem;
+      text-align: center;
+      letter-spacing: 8px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 25px;
+      background: var(--bg-secondary);
+      transition: all 0.3s;
+    }
+
+    .pin-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .pin-input.error {
+      border-color: var(--danger);
+      animation: shake 0.5s;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .auth-button {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);
+    }
+
+    .auth-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 58, 138, 0.4);
+    }
+
+    .auth-button:active {
+      transform: translateY(0);
+    }
+
+    .error-message {
+      color: var(--danger);
+      font-size: 0.9rem;
+      margin-top: 10px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .error-message.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
+  <!-- Ekran autentykacji PIN -->
+  <div class="auth-overlay" id="auth-overlay">
+    <div class="auth-modal">
+      <div class="auth-icon">
+        <i class="fas fa-lock"></i>
+      </div>
+      <h2 class="auth-title">Wymagana autoryzacja</h2>
+      <p class="auth-subtitle">Wprowadź kod PIN, aby uzyskać dostęp do edytora</p>
+      <input 
+        type="password" 
+        id="pin-input" 
+        class="pin-input" 
+        placeholder="********" 
+        maxlength="8"
+        autocomplete="off"
+      >
+      <button class="auth-button" onclick="checkPIN()">
+        <i class="fas fa-unlock"></i> Odblokuj dostęp
+      </button>
+      <div class="error-message" id="error-message">
+        Nieprawidłowy kod PIN. Spróbuj ponownie.
+      </div>
+    </div>
+  </div>
+
   <div class="loading-overlay" id="loading-overlay">
     <div class="loading-modal">
       <div class="loading-spinner"></div>
@@ -619,11 +763,82 @@
           <i class="fas fa-copy"></i> Kopiuj do schowka
         </button>
       </div>
-      <pre id="generated">// Kliknij "Generuj kod" aby wygenerować plik baza.js</pre>
+      <pre id="generated">Kliknij "Generuj kod" aby wygenerować plik baza.js</pre>
     </div>
   </div>
 
   <script>
+    const PIN_HASH = 'MjEzNzIxMzc=';
+
+    function decodePIN(encoded) {
+      try {
+        return atob(encoded);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function checkPIN() {
+      const input = document.getElementById('pin-input');
+      const errorMsg = document.getElementById('error-message');
+      
+      const enteredPIN = input.value;
+      const correctPIN = decodePIN(PIN_HASH);
+      
+      if (enteredPIN === correctPIN) {
+        document.getElementById('auth-overlay').classList.add('hidden');
+        input.classList.remove('error');
+        errorMsg.classList.remove('show');
+        
+        setTimeout(() => {
+          initializeApp();
+        }, 500);
+      } else {
+        input.classList.add('error');
+        errorMsg.classList.add('show');
+        input.value = '';
+        input.focus();
+        
+        setTimeout(() => {
+          input.classList.remove('error');
+        }, 500);
+      }
+    }
+    
+    function checkAuthStatus() {
+      document.getElementById('auth-overlay').classList.remove('hidden');
+      document.getElementById('pin-input').focus();
+    }
+    
+    function initializeApp() {
+      loadBaza();
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuthStatus();
+      
+      const pinInput = document.getElementById('pin-input');
+      if (pinInput) {
+        pinInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            checkPIN();
+          }
+        });
+        
+        pinInput.focus();
+      }
+      
+      document.getElementById('station-search').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') loadSelectedStation();
+      });
+      
+      document.getElementById('add-name').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addRow('add-table');
+      });
+      
+      setInterval(updateStats, 60000);
+    });
+
     let baza = {};
     let isLoading = false;
     let notificationCounter = 0;
@@ -671,18 +886,16 @@
       }
 
       if (!rows || rows.length === 0) {
-        throw new Error('Stacja musi mieć co najmniej jedno ostrzeżenie');
+        throw new Error('Stacja musi mieć co najmniej jeden wiersz (może być pusty)');
       }
 
       rows.forEach((row, index) => {
-        if (!row[0] && !row[1]) {
-          throw new Error(`Wiersz ${index + 1}: musisz podać co najmniej "od km" lub "do km"`);
-        }
-
-        // Walidacja formatu kilometrów
         ['od km', 'do km'].forEach((field, fieldIndex) => {
-          if (row[fieldIndex] && !/^\d+(,\d+)?$/.test(row[fieldIndex].replace('.', ','))) {
-            throw new Error(`Wiersz ${index + 1}: nieprawidłowy format ${field} (użyj formatu 123,456)`);
+          if (row[fieldIndex] && row[fieldIndex].trim()) {
+            const kmValue = row[fieldIndex].replace('.', ',');
+            if (!/^\d+(,\d+)?$/.test(kmValue)) {
+              throw new Error(`Wiersz ${index + 1}: nieprawidłowy format ${field} (użyj formatu 123,456)`);
+            }
           }
         });
       });
@@ -771,8 +984,14 @@
         section.className = 'station-item fade-in';
         section.innerHTML = `
           <div class="station-header">
-            <h3 class="station-title">📍 ${name}</h3>
+            <h3 class="station-title" id="station-title-${name.replace(/\s+/g, '-')}">📍 ${name}</h3>
+            <div class="station-name-edit" style="display: none;">
+              <input type="text" id="edit-name-${name.replace(/\s+/g, '-')}" value="${name}" placeholder="Nazwa stacji" style="font-size: 1.25rem; font-weight: 600; color: var(--primary); border: 1px solid var(--border); background: var(--bg-primary); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+            </div>
             <div class="station-actions">
+              <button class="btn-secondary" id="toggle-edit-btn-${name.replace(/\s+/g, '-')}" onclick="toggleStationNameEdit('${name.replace(/'/g, "\\'")}')">
+                <i class="fas fa-edit"></i> Zmień nazwę
+              </button>
               <button class="btn-success" onclick="saveEdit('${name.replace(/'/g, "\\'")}')">
                 <i class="fas fa-save"></i> Zapisz
               </button>
@@ -847,7 +1066,7 @@
         const tbody = document.getElementById('add-table').querySelector('tbody');
         const rows = [...tbody.rows].map(r => 
           [...r.querySelectorAll('input')].map(i => i.value.trim())
-        ).filter(r => r.some(v => v));
+        );
 
         validateStationData(name, rows);
 
@@ -878,7 +1097,7 @@
       const tbody = document.getElementById(tableId).querySelector('tbody');
       const rows = Array.from(tbody.rows).map(r => 
         Array.from(r.querySelectorAll('input')).map(i => i.value.trim())
-      ).filter(r => r.some(v => v));
+      );
       
       baza[name] = rows.length ? rows : undefined;
       if (!baza[name]) delete baza[name];
@@ -903,28 +1122,70 @@
       showNotification(`Stacja "${name}" została usunięta`, 'success');
     }
 
-    function saveEdit(name) {
+    function toggleStationNameEdit(name) {
+      const titleElement = document.getElementById(`station-title-${name.replace(/\s+/g, '-')}`);
+      const editContainer = document.querySelector(`#edit-${name.replace(/\s+/g, '-')} .station-name-edit`);
+      const editElement = document.getElementById(`edit-name-${name.replace(/\s+/g, '-')}`);
+      const toggleBtn = document.getElementById(`toggle-edit-btn-${name.replace(/\s+/g, '-')}`);
+      
+      if (editContainer.style.display === 'none' || editContainer.style.display === '') {
+        // Pokaż pole edycji
+        titleElement.style.display = 'none';
+        editContainer.style.display = 'block';
+        toggleBtn.innerHTML = '<i class="fas fa-times"></i> Anuluj';
+        editElement.focus();
+        editElement.select();
+      } else {
+        // Ukryj pole edycji
+        titleElement.style.display = 'block';
+        editContainer.style.display = 'none';
+        toggleBtn.innerHTML = '<i class="fas fa-edit"></i> Zmień nazwę';
+        // Przywróć oryginalną nazwę w polu edycji
+        editElement.value = titleElement.textContent.replace('📍 ', '');
+      }
+    }
+
+    function saveEdit(oldName) {
       try {
-        const tbody = document.getElementById(`edit-table-${name.replace(/\s+/g, '-')}`).querySelector('tbody');
+        const nameInput = document.getElementById(`edit-name-${oldName.replace(/\s+/g, '-')}`);
+        const titleElement = document.getElementById(`station-title-${oldName.replace(/\s+/g, '-')}`);
+        
+        // Użyj nazwy z pola edycji jeśli jest widoczne, w przeciwnym razie użyj oryginalnej nazwy
+        let newName;
+        if (nameInput.style.display !== 'none') {
+          newName = nameInput.value.trim();
+        } else {
+          newName = titleElement.textContent.replace('📍 ', '');
+        }
+        
+        const tbody = document.getElementById(`edit-table-${oldName.replace(/\s+/g, '-')}`).querySelector('tbody');
         const rows = Array.from(tbody.rows).map(r => 
           Array.from(r.querySelectorAll('input')).map(i => i.value.trim())
-        ).filter(r => r.some(v => v));
+        );
 
-        validateStationData(name, rows);
+        validateStationData(newName, rows);
 
-        baza[name] = rows.length ? rows : undefined;
-        if (!baza[name]) delete baza[name];
+        // Jeśli nazwa się zmieniła, usuń starą i dodaj nową
+        if (oldName !== newName) {
+          if (baza[newName] && !confirm(`Stacja "${newName}" już istnieje. Nadpisać?`)) {
+            return;
+          }
+          delete baza[oldName];
+        }
+
+        baza[newName] = rows.length ? rows : undefined;
+        if (!baza[newName]) delete baza[newName];
         
         populateSelects();
         updateStats();
         
-        const section = document.getElementById(`edit-${name.replace(/\s+/g, '-')}`);
+        const section = document.getElementById(`edit-${oldName.replace(/\s+/g, '-')}`);
         if (section) {
           section.style.animation = 'fadeIn 0.3s ease reverse';
           setTimeout(() => section.remove(), 300);
         }
         
-        showNotification(`Zmiany dla stacji "${name}" zostały zapisane`, 'success');
+        showNotification(`Zmiany dla stacji "${newName}" zostały zapisane`, 'success');
         
       } catch (error) {
         showNotification(error.message, 'error');
@@ -943,7 +1204,7 @@
         code += `  ]${i < a.length - 1 ? ',' : ''}\n`;
       });
       
-      code += `};\n\n// Wygenerowano: ${new Date().toLocaleString('pl-PL')}\n// Edytor WOS Professional Edition`;
+      code += `};\n\nWygenerowano: ${new Date().toLocaleString('pl-PL')}\nEdytor WOS Professional Edition`;
       
       document.getElementById('generated').textContent = code;
       showNotification('Kod wygenerowany pomyślnie', 'success');
@@ -971,20 +1232,6 @@
         showNotification('Błąd kopiowania do schowka', 'error');
       }
     }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      loadBaza();
-      
-      document.getElementById('station-search').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') loadSelectedStation();
-      });
-      
-      document.getElementById('add-name').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') addRow('add-table');
-      });
-      
-      setInterval(updateStats, 60000);
-    });
 
   </script>
 </body>
